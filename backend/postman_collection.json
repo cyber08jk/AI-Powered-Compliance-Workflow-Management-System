@@ -1,0 +1,677 @@
+{
+  "info": {
+    "name": "AI-Powered Compliance System",
+    "description": "Complete API documentation for the AI-Powered Compliance & Workflow Management System\n\n**Base URL**: http://localhost:5000/api\n**Authentication**: Bearer Token (JWT)\n\n## Quick Start\n1. Register a new organization\n2. Login to get JWT token\n3. Use token in Authorization header for all requests\n\n## Features\n- Multi-tenant compliance issue management\n- Customizable workflow state machines\n- AI-powered root cause analysis (Groq AI - llama-3.1-8b-instant)\n- Real-time WebSocket updates\n- Complete audit trail logging\n- SLA monitoring with breach detection\n- Role-based access control\n\n## Key Concepts\n- **Organization**: Tenant container, first user is Admin\n- **Issue**: Compliance issue to be managed/resolved\n- **Workflow**: Defines valid state transitions and roles\n- **SLA**: Service Level Agreement deadline for resolution\n- **Audit Log**: Immutable record of all system actions",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:5000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "issueId",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "workflowId",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "🔐 Authentication",
+      "description": "User registration, login, and account management",
+      "item": [
+        {
+          "name": "📝 Register Organization & Admin",
+          "description": "Create new organization and register the first admin user\n\n**Response includes JWT token that must be stored for subsequent requests**",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Doe\",\n  \"email\": \"admin@acmepharma.com\",\n  \"password\": \"SecurePassword123!\",\n  \"organizationName\": \"Acme Pharma Inc\",\n  \"industry\": \"Pharmaceutical\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    console.log('✓ Token saved');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "🔑 Login",
+          "description": "Authenticate user and receive JWT token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@acmepharma.com\",\n  \"password\": \"SecurePassword123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data.token) {",
+                  "    pm.collectionVariables.set('token', jsonData.data.token);",
+                  "    pm.collectionVariables.set('userId', jsonData.data.id);",
+                  "    console.log('✓ Logged in successfully');",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "👤 Get Current User",
+          "description": "Retrieve current authenticated user details including role, organization, and status",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "👥 Get All Users",
+          "description": "List all users in the current organization. Requires Admin or Manager role.",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
+            }
+          }
+        },
+        {
+          "name": "➕ Create User",
+          "description": "Create new user in organization. Admin only.\n\nAvailable roles: Admin, Manager, Reviewer, User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Jane Smith\",\n  \"email\": \"jane.smith@acmepharma.com\",\n  \"password\": \"SecurePassword456!\",\n  \"role\": \"Manager\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/users",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "users"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🎟️ Issues",
+      "description": "Create, read, update, and manage compliance issues with status transitions",
+      "item": [
+        {
+          "name": "➕ Create Issue",
+          "description": "Create new compliance issue\n\n**Categories**: Quality, Process, Safety, Regulatory, Operational\n**Priorities**: Critical, High, Medium, Low\n**Initial Status**: Draft (from default workflow)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Temperature Deviation in Storage Unit B\",\n  \"description\": \"Storage unit B recorded temperatures exceeding 25°C for 4 consecutive hours on 2026-02-10. This may compromise product stability and violate storage requirements. Immediate investigation needed.\",\n  \"category\": \"Quality\",\n  \"priority\": \"Critical\",\n  \"dueDate\": \"2026-02-25T23:59:59Z\",\n  \"assignedTo\": \"\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/issues",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "issues"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) {",
+                  "    pm.collectionVariables.set('issueId', jsonData.data._id);",
+                  "    console.log('✓ Issue created: ' + jsonData.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "📋 Get All Issues",
+          "description": "Retrieve paginated list of issues with optional filtering\n\n**Query Parameters**:\n- `page`: Page number (default: 1)\n- `limit`: Items per page (default: 20)\n- `status`: Filter by status (Draft, Submitted, etc.)\n- `category`: Filter by category\n- `priority`: Filter by priority\n- `search`: Search in title/description",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/issues?page=1&limit=20",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "issues"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                },
+                {
+                  "key": "status",
+                  "value": "Draft",
+                  "disabled": true
+                },
+                {
+                  "key": "category",
+                  "value": "Quality",
+                  "disabled": true
+                },
+                {
+                  "key": "priority",
+                  "value": "Critical",
+                  "disabled": true
+                },
+                {
+                  "key": "search",
+                  "value": "temperature",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "🔍 Get Issue Details",
+          "description": "Retrieve detailed information for specific issue including all comments, summaries, and history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/issues/{{issueId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "issues",
+                "{{issueId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "✏️ Update Issue",
+          "description": "Update issue fields: title, description, category, priority, assignedTo, dueDate\n\n**Note**: Use /transition endpoint to change status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"UPDATED: Temperature Deviation in Storage Unit B\",\n  \"priority\": \"High\",\n  \"description\": \"Updated description with investigation findings...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/issues/{{issueId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "issues",
+                "{{issueId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🔄 Transition Issue Status",
+          "description": "Change issue status through workflow state machine\n\n**Valid transitions depend on**:\n1. Current issue status\n2. Target status\n3. User's role\n4. Workflow definition\n\nCommon valid transitions:\n- Draft → Submitted\n- Submitted → Under Review\n- Under Review → Approved/Rejected\n- Approved → Closed",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"toState\": \"Submitted\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/issues/{{issueId}}/transition",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "issues",
+                "{{issueId}}",
+                "transition"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🗑️ Delete Issue",
+          "description": "Permanently delete issue. Admin and Manager only. Creates audit log entry.",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/issues/{{issueId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "issues",
+                "{{issueId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "⚙️ Workflows",
+      "description": "Define and manage workflow state machines that control issue transitions",
+      "item": [
+        {
+          "name": "➕ Create Workflow",
+          "description": "Create custom workflow with states and role-based transitions\n\n**Default Workflow States**: Draft, Submitted, Under Review, Approved, Rejected, Closed\n\n**Roles**: Admin, Manager, Reviewer, User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Custom Compliance Workflow\",\n  \"description\": \"Custom workflow for specific compliance requirements\",\n  \"states\": [\n    \"Draft\",\n    \"Internal Review\",\n    \"Compliance Check\",\n    \"Approved\",\n    \"Rejected\",\n    \"Closed\"\n  ],\n  \"transitions\": [\n    {\n      \"from\": \"Draft\",\n      \"to\": \"Internal Review\",\n      \"allowedRoles\": [\"Admin\", \"Manager\", \"Reviewer\", \"User\"]\n    },\n    {\n      \"from\": \"Internal Review\",\n      \"to\": \"Compliance Check\",\n      \"allowedRoles\": [\"Admin\", \"Manager\", \"Reviewer\"]\n    },\n    {\n      \"from\": \"Compliance Check\",\n      \"to\": \"Approved\",\n      \"allowedRoles\": [\"Admin\", \"Manager\"]\n    },\n    {\n      \"from\": \"Compliance Check\",\n      \"to\": \"Rejected\",\n      \"allowedRoles\": [\"Admin\", \"Manager\"]\n    },\n    {\n      \"from\": \"Approved\",\n      \"to\": \"Closed\",\n      \"allowedRoles\": [\"Admin\", \"Manager\"]\n    },\n    {\n      \"from\": \"Rejected\",\n      \"to\": \"Draft\",\n      \"allowedRoles\": [\"Admin\", \"Manager\", \"User\"]\n    }\n  ],\n  \"initialState\": \"Draft\",\n  \"finalStates\": [\"Closed\", \"Rejected\"],\n  \"isDefault\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workflows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows"
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const jsonData = pm.response.json();",
+                  "if (jsonData.data && jsonData.data._id) {",
+                  "    pm.collectionVariables.set('workflowId', jsonData.data._id);",
+                  "    console.log('✓ Workflow created: ' + jsonData.data._id);",
+                  "}"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "📋 Get All Workflows",
+          "description": "List all workflows for organization",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workflows",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🔍 Get Workflow Details",
+          "description": "Retrieve detailed workflow information including all states and transitions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/{{workflowId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                "{{workflowId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "✏️ Update Workflow",
+          "description": "Modify workflow name, description, or transitions. Admin only.",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Workflow Name\",\n  \"description\": \"Updated description\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/workflows/{{workflowId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                "{{workflowId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "🗑️ Delete Workflow",
+          "description": "Delete workflow. Cannot delete if issues reference it.",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/workflows/{{workflowId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "workflows",
+                "{{workflowId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📊 Dashboard",
+      "description": "Analytics and monitoring statistics",
+      "item": [
+        {
+          "name": "📈 Get Dashboard Stats",
+          "description": "Retrieve comprehensive dashboard statistics:\n\n**Returns**:\n- Total issues count\n- Issues by status breakdown (for pie chart)\n- Issues by category breakdown (for bar chart)\n- Issues by priority breakdown\n- Average resolution time\n- Monthly issue trend\n- SLA statistics (total, breached, on-track)\n- Recent 5 issues with details",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🤖 AI Integration",
+      "description": "AI-powered analysis using Groq AI (llama-3.1-8b-instant model)",
+      "item": [
+        {
+          "name": "✨ Generate AI Summary",
+          "description": "Generate AI-powered root cause analysis for an issue\n\n**Returns structured analysis**:\n- Root Cause Identification\n- Contributing Factors\n- Impact Assessment  \n- Recommended Corrective Actions\n- Preventive Measures\n\n**Note**: Requires GROQ_API_KEY in backend environment. Falls back to mock summary if API key not configured.",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"issueId\": \"{{issueId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/ai/summarize",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "summarize"
+              ]
+            }
+          }
+        },
+        {
+          "name": "📚 Get Issue AI Summaries",
+          "description": "Retrieve all AI summaries generated for an issue",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/ai/summaries/{{issueId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "ai",
+                "summaries",
+                "{{issueId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "📋 Audit Logs",
+      "description": "Immutable audit trail of all system actions for compliance and accountability",
+      "item": [
+        {
+          "name": "📖 Get All Audit Logs",
+          "description": "Retrieve audit logs with optional filtering\n\n**Query Parameters**:\n- `page`: Page number\n- `limit`: Items per page\n- `entity`: Filter by entity type (Issue, User, Workflow)\n- `action`: Filter by action (CREATE, UPDATE, DELETE, etc.)\n- `performedBy`: Filter by user ID\n- `startDate`: ISO date\n- `endDate`: ISO date\n\n**Logged Actions**:\n- CREATE, UPDATE, DELETE\n- STATUS_TRANSITION\n- AI_SUMMARY_GENERATED\n- SLA_BREACHED\n- LOGIN, LOGOUT, REGISTER",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit?page=1&limit=50",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                },
+                {
+                  "key": "entity",
+                  "value": "Issue",
+                  "disabled": true
+                },
+                {
+                  "key": "action",
+                  "value": "CREATE",
+                  "disabled": true
+                },
+                {
+                  "key": "performedBy",
+                  "value": "{{userId}}",
+                  "disabled": true
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "🔍 Get Entity Audit Trail",
+          "description": "Get complete audit history for specific entity (Issue, User, etc.)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audit/entity/Issue/{{issueId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audit",
+                "entity",
+                "Issue",
+                "{{issueId}}"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "🏥 System",
+      "description": "System health and status endpoints",
+      "item": [
+        {
+          "name": "✅ Health Check",
+          "description": "Verify backend is running and accessible",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "health"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  }
+}

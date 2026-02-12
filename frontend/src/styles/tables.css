@@ -1,0 +1,154 @@
+/* Professional Table Styling */
+
+.table-container {
+    overflow-x: auto;
+    border-radius: 12px;
+    border: 1px solid #e2e8f0;
+    background: white;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+    text-align: left;
+}
+
+thead {
+    background: linear-gradient(180deg, #f9fafb 0%, #f3f4f6 100%);
+    border-bottom: 2px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+th {
+    padding: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    text-transform: uppercase;
+    font-size: 12px;
+    letter-spacing: 0.5px;
+    vertical-align: middle;
+}
+
+tbody {
+    background: white;
+}
+
+td {
+    padding: 14px 16px;
+    border-bottom: 1px solid #f1f5f9;
+    color: #475569;
+    vertical-align: middle;
+}
+
+tbody tr {
+    transition: all 0.2s ease;
+}
+
+tbody tr:hover {
+    background-color: #f9fafb;
+    border-bottom-color: #cbd5e1;
+}
+
+tbody tr:last-child td {
+    border-bottom: none;
+}
+
+tbody tr:last-child:hover {
+    background-color: #f9fafb;
+    border-bottom-color: #f1f5f9;
+}
+
+/* Table Actions */
+.table-actions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.btn-icon {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    font-size: 16px;
+}
+
+.btn-icon:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.btn-icon.delete:hover {
+    background: #fee2e2;
+    color: #991b1b;
+}
+
+/* Table Responsive */
+@media (max-width: 768px) {
+    .table-container {
+        overflow-x: auto;
+        border-radius: 8px;
+    }
+
+    table {
+        font-size: 13px;
+        min-width: 600px;
+    }
+
+    th,
+    td {
+        padding: 12px;
+    }
+
+    th {
+        font-size: 11px;
+    }
+}
+
+/* Empty Table State */
+.empty-table {
+    padding: 48px 20px;
+    text-align: center;
+    color: #94a3b8;
+}
+
+.empty-table-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.empty-table-description {
+    font-size: 13px;
+    color: #64748b;
+}
+
+/* Striped Table Variation */
+table.striped tbody tr:nth-child(even) {
+    background: #f9fafb;
+}
+
+table.striped tbody tr:nth-child(even):hover {
+    background: #f3f4f6;
+}
+
+/* Compact Table Variation */
+table.compact th,
+table.compact td {
+    padding: 10px 12px;
+    font-size: 13px;
+}
+
+table.compact th {
+    font-size: 11px;
+}
